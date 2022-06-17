@@ -78,9 +78,10 @@ void blackjack(int *cantJugadores, Map *jugadores){
   for (int i = 0 ; i < *cantJugadores ; i++){
     printf("\"%s\"\nDesea retirarse?\nSi(1)\nNo(2)\n > ", aux->nombre);
     scanf("%d", &respuesta);
-    if (respuesta == 1) cantRetirada++;
-    
-    eraseMap(jugadores, aux->nombre);
+    if (respuesta == 1){
+      cantRetirada++;
+      eraseMap(jugadores, aux->nombre);
+    }
     aux = nextMap(jugadores);
     printf("\n\n");
   }
