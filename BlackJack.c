@@ -5,7 +5,7 @@
 #include "Map.c"
 
 typedef struct{
-  char valor;
+  int valor;
   char pinta;
 } Carta;
 
@@ -91,11 +91,54 @@ void blackjack(int *cantJugadores, Map *jugadores){
   
 }
 
-/*
+void mostrarValor(int valor){
+  switch (valor){
+    case 1: printf("A");
+            break;
+    case 11:printf("J");
+            break;
+    case 12:printf("Q");
+            break;
+    case 13:printf("K");
+            break;
+    default:printf("%d", valor);
+            break; 
+  }
+
+
+}
+
+void mostrarCarta(Carta card){
+  mostrarValor(card.valor);
+  printf("%c ", card.pinta);
+}
+
 void crearMazo(Carta *mazo){
-  char * valores[13] = {"A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"};
-  for (int i = 0 ; i < 13 ; i++) printf("%c" , valores[i]);
-}*/
+  int valores[13] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
+  char pintas[4] = {'C', 'D', 'T', 'P'};
+
+  int cont = 0;
+  for (int i = 0 ; i < 4 ; i++){
+    for (int j = 0 ; j < 13 ; j++){
+      mazo[cont].valor = valores[j];
+      mazo[cont].pinta = pintas[i];
+      cont++;
+    }
+  }
+
+  for (int x = 0 ; x < 52 ; x++){
+    mostrarCarta(mazo[x]);
+    printf("\n");
+  }
+  
+  /*
+  for (int i = 0 ; i < 13 ; i++){
+    mostrarValor(valores[i]);
+    printf(" - ");
+  }
+  printf("\n");*/
+
+}
 
 void crearJugador(Map * jugadores){
   Jugador * nuevo = (Jugador*)calloc(1, sizeof(Jugador));
@@ -122,9 +165,9 @@ bool menuPrincipal(){
 
   if (respuesta != 1) return false;
 
-  /* Creacion del mazo
+  //Creacion del mazo
   Carta * mazo = (Carta*)calloc(52,sizeof(Carta));
-  crearMazo(mazo);*/
+  crearMazo(mazo);
 
   // Preparación juego
   printf("\nCuantos jugadores son? (Maximo 5)\n");
