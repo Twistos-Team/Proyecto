@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include <string.h>
 #include "Map.c"
+#include "treemap.c"
+#include <time.h>
 
 typedef struct{
   int valor;
@@ -16,6 +18,20 @@ typedef struct{
   int apuestaTurno;
   Carta mano[6];
 } Jugador;
+
+int lower_than_string(void* key1, void* key2){
+    char* k1=(char*) key1;
+    char* k2=(char*) key2;
+    if(strcmp(k1,k2)<0) return 1;
+    return 0;
+}
+
+int lower_than_int(void* key1, void* key2){
+    int* k1=(int*) key1;
+    int* k2=(int*) key2;
+    if(*k1<*k2) return 1;
+    return 0;
+}
 
 int is_equal_string(void * key1, void * key2) {
     if(strcmp((char*)key1, (char*)key2)==0) return 1;
@@ -108,7 +124,7 @@ void mostrarValor(int valor){
 
 }
 
-void mostrarCarta(Carta card){
+void mostrarCarta(Carta  card){
   mostrarValor(card.valor);
   printf("%c ", card.pinta);
 }
@@ -126,10 +142,10 @@ void crearMazo(Carta *mazo){
     }
   }
 
-  for (int x = 0 ; x < 52 ; x++){
+ /*for (int x = 0 ; x < 52 ; x++){
     mostrarCarta(mazo[x]);
     printf("\n");
-  }
+  }/*
   
   /*
   for (int i = 0 ; i < 13 ; i++){
@@ -156,6 +172,17 @@ void crearJugador(Map * jugadores){
   printf("\n");
 }
 
+void barajarMazo(Carta * mazo, TreeMap * Baraja, int i){
+  int * x = (int*)malloc(sizeof(int));
+  Carta * nuevo = (Carta*)calloc(1, sizeof(Carta));;
+  nuevo->pinta = mazo[i].pinta;
+  nuevo->valor = mazo[i].valor;
+  //printf("%d-%c\n", nuevo->valor, nuevo->pinta);
+  * x = rand();
+  insertTreeMap(Baraja, x , nuevo);
+  //printf("%d\n", *x);
+}
+
 bool menuPrincipal(){
   printf("**** BLACKJACK ****\n\n");
   
@@ -168,6 +195,26 @@ bool menuPrincipal(){
   //Creacion del mazo
   Carta * mazo = (Carta*)calloc(52,sizeof(Carta));
   crearMazo(mazo);
+
+  TreeMap * Baraja = createTreeMap(lower_than_int);
+  for (int i = 0 ; i < 52 ; i++){
+    barajarMazo(mazo,Baraja,i);
+  }
+
+  Carta * aux = firstTreeMap(Baraja);
+
+  while(aux != NULL){
+    printf("%d-%c\n", aux->valor, aux->pinta);
+    aux = nextTreeMap(Baraja);
+  }
+
+  /*for (int x = 0 ; x < 52 ; x++){
+    mostrarCarta(*auxiliar);
+    aux = nextTreeMap(Baraja);
+    auxiliar = aux->value;
+    printf("\n");
+  }*/
+
 
   // Preparación juego
   printf("\nCuantos jugadores son? (Maximo 5)\n");
@@ -202,6 +249,7 @@ bool menuPrincipal(){
 }
 
 int main(){
+  srand(time(NULL));
   while(menuPrincipal()){}
 
   printf("\n\nGracias por jugar ^-^\n > ");
