@@ -2,9 +2,11 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include "Map.c"
-#include "treemap.c"
 #include <time.h>
+
+#include "Map.c"
+#include "hashmap.c"
+
 
 typedef struct{
   int valor;
@@ -43,16 +45,78 @@ void chomp(char *s) {
     *s = 0;
 }
 
-void blackjack(int *cantJugadores, Map *jugadores){
-  // Se verifica si los jugadores tienen dinero( =! 0)
+
+void mostrarValor(int valor){
+  switch (valor){
+    case 1: printf("A");
+            break;
+    case 11:printf("J");
+            break;
+    case 12:printf("Q");
+            break;
+    case 13:printf("K");
+            break;
+    default:printf("%d", valor);
+            break; 
+  }
+}
+
+void mostrarCarta(Carta * card){
+  mostrarValor(card->valor);
+  printf("%c ", card->pinta);
+}
+
+void barajarMazo(Carta * mazo, HashMap * baraja, int * keyBaraja, int * idxBaraja){
+  for (int i = 0 ; i < 52 ; i++){
+    *idxBaraja = 0;
+
+    Carta * new = (Carta*)calloc(1, sizeof(Carta));
+    new->valor = mazo[i].valor;
+    new->pinta = mazo[i].pinta;
+
+    int idx = rand();
+    keyBaraja[i] = idx;
+
+    //insertHashMap(baraja, (char*)idx, new);
+  }
+  /*
+  for (int i = 0 ; i < 52 ; i++){
+    Carta * aux = searchHashMap(baraja, keyBaraja[i]);
+    printf("%d -", keyBaraja[i]);
+    mostrarCarta(aux);
+    printf("\n");
+  }*/
+}
+
+void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, HashMap * baraja, int * keyBaraja, int * idxBaraja){
+  // - - -  HAY DINERO??  - - -
+  int cantRetirada = 0;
+  Jugador * aux = firstMap(jugadores);
+  while (aux != NULL){
+    if (aux->dinero <= 0){
+      printf("\"%s\": Te quedaste sin dinero!\n\n", aux->nombre);
+      cantRetirada++;
+      eraseMap(jugadores, aux->nombre);
+    }
+    aux = nextMap(jugadores);
+  }
+  (*cantJugadores) -= cantRetirada;
+
+  // - - -  BARAJAR EL MAZO  - - -
+  barajarMazo(mazo, baraja, keyBaraja, idxBaraja);
+  for (int i = 0 ; i < 52 ; i++){
+    printf("%d\n",idxBaraja[i]);
+  }
   
+
   // Se crean los datos para el croupier (en desarrollo)
   
+
+  // - - -  APUESTAS  - - -
   printf("** Empiezan las apuestas! **\n\n");
-  // Inicio de apuestas
-  
-  Jugador * aux = firstMap(jugadores);
-  for  (int i = 0 ; i < *cantJugadores ; i++){
+
+  aux = firstMap(jugadores);
+  while (aux != NULL){
     printf("\"%s\"\nIngrese su apuesta: \n > ", aux->nombre);
     // Aqui cada jugador apuesta
     // Se comprueba si tiene el dinero suficiente
@@ -61,13 +125,19 @@ void blackjack(int *cantJugadores, Map *jugadores){
   }
   printf("\n\n");
 
+
+  /*
+  // - - -  REPARTICION CARTAS INICIALES  - - -
   printf("** Se reparten cartas iniciales **\n\n");
   for (int i = 0 ; i < *cantJugadores ; i++){
     //Función para repartir las cartas iniciales
   }
+  */
 
+
+  // - - -  TURNOS JUGADORES  - - - 
   aux = firstMap(jugadores);
-  for (int i = 0 ; i < *cantJugadores ; i++){
+  while (aux != NULL){
     printf("Turno de \"%s\"\n", aux->nombre);
     // Se muestra la mano del jugador
 
@@ -78,20 +148,19 @@ void blackjack(int *cantJugadores, Map *jugadores){
   }
   printf("\n\n");
 
-  printf("** Turno del Croupier **\n");
-  // while(sumaCroupier >= 17) repetitivamente sacará cartas
 
+  // - - -  RESULTADOS  - - -
+  printf("** Turno del Croupier **\n");
   printf("\nCalculando resultado...\n\n");
 
   // Se repartiran las ganancias de los jugadores victoriosos
 
-  // Sistema en desarrollo
-  int respuesta;
-  int cantRetirada = 0;
 
-  
+  int respuesta;
+  cantRetirada = 0;
+
   aux = firstMap(jugadores);
-  for (int i = 0 ; i < *cantJugadores ; i++){
+  while (aux != NULL){
     printf("\"%s\"\nDesea retirarse?\nSi(1)\nNo(2)\n > ", aux->nombre);
     scanf("%d", &respuesta);
     if (respuesta == 1){
@@ -107,27 +176,6 @@ void blackjack(int *cantJugadores, Map *jugadores){
   
 }
 
-void mostrarValor(int valor){
-  switch (valor){
-    case 1: printf("A");
-            break;
-    case 11:printf("J");
-            break;
-    case 12:printf("Q");
-            break;
-    case 13:printf("K");
-            break;
-    default:printf("%d", valor);
-            break; 
-  }
-
-
-}
-
-void mostrarCarta(Carta  card){
-  mostrarValor(card.valor);
-  printf("%c ", card.pinta);
-}
 
 void crearMazo(Carta *mazo){
   int valores[13] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
@@ -168,10 +216,10 @@ void crearJugador(Map * jugadores){
   nuevo->dinero = 10000;
 
   insertMap(jugadores, nuevo->nombre, nuevo);
-
   printf("\n");
 }
 
+/*
 void barajarMazo(Carta * mazo, TreeMap * Baraja, int i){
   int * x = (int*)malloc(sizeof(int));
   Carta * nuevo = (Carta*)calloc(1, sizeof(Carta));;
@@ -181,7 +229,7 @@ void barajarMazo(Carta * mazo, TreeMap * Baraja, int i){
   * x = rand();
   insertTreeMap(Baraja, x , nuevo);
   //printf("%d\n", *x);
-}
+}*/
 
 bool menuPrincipal(){
   printf("**** BLACKJACK ****\n\n");
@@ -192,29 +240,11 @@ bool menuPrincipal(){
 
   if (respuesta != 1) return false;
 
+
+
   //Creacion del mazo
   Carta * mazo = (Carta*)calloc(52,sizeof(Carta));
   crearMazo(mazo);
-
-  TreeMap * Baraja = createTreeMap(lower_than_int);
-  for (int i = 0 ; i < 52 ; i++){
-    barajarMazo(mazo,Baraja,i);
-  }
-
-  Carta * aux = firstTreeMap(Baraja);
-
-  while(aux != NULL){
-    printf("%d-%c\n", aux->valor, aux->pinta);
-    aux = nextTreeMap(Baraja);
-  }
-
-  /*for (int x = 0 ; x < 52 ; x++){
-    mostrarCarta(*auxiliar);
-    aux = nextTreeMap(Baraja);
-    auxiliar = aux->value;
-    printf("\n");
-  }*/
-
 
   // Preparación juego
   printf("\nCuantos jugadores son? (Maximo 5)\n");
@@ -240,11 +270,19 @@ bool menuPrincipal(){
   }
   printf("\n\n");
 
+  int * keyBaraja = (int*)calloc(52, sizeof(int));
+  HashMap * baraja = createHashMap(52);
+  int * idxBaraja = (int*)calloc(1, sizeof(int));
+
+
   // BLACKJACK!
   while(*cantJugadores != 0){
-    blackjack(cantJugadores, jugadores);
+    blackjack(cantJugadores, jugadores, mazo, baraja, keyBaraja, idxBaraja);
   }
-  // Se debe pasar la cantidad y el mapa de jugadores
+
+  free(keyBaraja);
+  free(baraja);
+  free(idxBaraja);
   return true;
 }
 
