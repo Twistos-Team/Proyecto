@@ -86,21 +86,22 @@ void crearMazo(Carta *mazo){
   }
 }
 
-void barajarMazo(Carta * mazo, Map * baraja, int * contCarta){
-  *contCarta = 0;
+void barajarMazo(Carta * mazo, Carta *baraja, int *indice){
+  int largo = 52;
+  int idx;
+  crearMazo(mazo);
+
   for (int i = 0 ; i < 52 ; i++){
-    Carta * nuevo = (Carta*)calloc(1, sizeof(Carta));
-    nuevo->pinta = mazo[i].pinta;
-    nuevo->valor = mazo[i].valor;
+    idx = rand()%52;
+    baraja[i].pinta = mazo[idx].pinta;
+    baraja[i].valor = mazo[idx].valor;
 
-    int * key = (int*)malloc(sizeof(int));
-    *key = rand();
-
-    insertMap(baraja, key, nuevo);
+    mazo[idx] = mazo[largo-1];
+    largo--;
   }
 }
 
-void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Map * baraja, int * contCarta){
+void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Carta * baraja, int * idx){
   printf("******\n");
   printf("Empieza el juego!\n\n");
   Jugador * aux;
@@ -125,18 +126,13 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Map * baraja, i
   }
 
   // ********  BARAJAR EL MAZO  ********
-  barajarMazo(mazo, baraja, contCarta);
-
-  auxCarta = firstMap(baraja);
-  if (auxCarta == NULL) printf("QUe loco\n");
-  while(auxCarta != NULL){
-    mostrarCarta(auxCarta);
-    printf("\n");
-    auxCarta = nextMap(baraja);
+  if (baraja == NULL){
+    printf("Error al guardar memoria");
+    exit(1);
   }
-  printf("\n");
 
-  
+  int * indice = (int*)malloc(sizeof(int));
+  barajarMazo(mazo, baraja, indice);
 
   // ********  APUESTAS  ********
   printf("** Empiezan las apuestas! **\n\n");
@@ -262,14 +258,14 @@ bool menuPrincipal(){
   printf("\n\n");
 
 
-  // ********  CREACION MAPA DE BARAJA  ********
-  Map * baraja = createMap(lower_than_int);
-  int * contCarta;
+  // ********  CREAR BARAJA DE CARTAS  ********
+  Carta * baraja = (Carta*)malloc(52*sizeof(Carta));
+  int * idx = (int*)malloc(sizeof(int));
 
 
   // ********  BLACKJACK  ********
   while(*cantJugadores != 0){
-    blackjack(cantJugadores, jugadores, mazo, baraja, contCarta);
+    blackjack(cantJugadores, jugadores, mazo, baraja, idx);
   }
 
   return true;
