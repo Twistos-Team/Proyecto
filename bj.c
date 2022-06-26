@@ -20,6 +20,8 @@ typedef struct{
   int suma;
   int apuestaTurno;
   Carta mano[6];
+  int cantCarta;
+  bool bj;
 } Jugador;
 
 int lower_than_int(void* key1, void* key2){
@@ -54,10 +56,10 @@ void mostrarValor(int valor){
   }
 }
 
-void mostrarCarta(Carta * card){
+void mostrarCarta(Carta card){
   printf("[");
-  mostrarValor(card->valor);
-  printf("%c] ", card->pinta);
+  mostrarValor(card.valor);
+  printf("%c] ", card.pinta);
 }
 
 void crearJugador(Map * jugadores){
@@ -91,13 +93,108 @@ void barajarMazo(Carta * mazo, Carta *baraja, int *indice){
   int idx;
   crearMazo(mazo);
 
-  for (int i = 0 ; i < 52 ; i++){
+  int cont = 0;
+  while (cont < 52){
     idx = rand()%52;
-    baraja[i].pinta = mazo[idx].pinta;
-    baraja[i].valor = mazo[idx].valor;
 
-    mazo[idx] = mazo[largo-1];
-    largo--;
+    if (mazo[idx].valor != 0){
+      baraja[cont] = mazo[idx];
+      mazo[idx].valor = 0;
+      cont++;
+    }
+  }
+  
+  
+  *indice = 51;
+  /*
+  for(int i = 0 ; i < 52 ; i ++  ){
+    mostrarCarta(baraja[i]);
+  }*/
+}
+void repartirCarta(Jugador * jugador, Carta * baraja, int * i){
+  jugador->mano[jugador->cantCarta] = baraja[*i];
+  int valor = jugador->mano[jugador->cantCarta].valor;
+  (jugador->cantCarta)++;
+
+  switch(valor){
+    case 1: 
+      valor+= 10;
+      break;
+    case 11:
+      valor--;
+      break;
+    case 12:
+      valor -=2 ;
+      break;
+    case 13:
+      valor -= 3;
+      break;
+  }
+  
+  jugador->suma += valor;
+  (*i)--;
+}
+
+void mostrarMano(Jugador * j){
+  for (int i = 0 ; i < j->cantCarta ; i++){
+    mostrarCarta(j->mano[i]);
+  }
+  printf("\n");
+}
+
+bool opcionJugador(Jugador * aux, Carta * baraja, int * idx){
+  printf("Mano: ");
+  mostrarMano(aux);
+
+  if (aux->suma == 21){
+    printf("Blackjack!\n");
+    aux->bj = true;
+    return false;
+  }
+
+  printf("Que desea hacer?\n");
+  int resp;
+  printf("Pedir carta(1)\nPlantarse(2)\nRendirse(3)\n > ");
+  scanf("%d", &resp);
+  printf("\n");
+
+  switch(resp){
+  case 1:
+    if (aux->cantCarta < 6) repartirCarta(aux,baraja,idx);
+    else printf("No puedes pedir mas cartas\n");
+    break;
+
+  case 2:
+    printf("Plantarse\n");
+    return false;
+    break;
+
+  case 3:
+  printf("Rendirse\n");
+    return false;
+    break;
+
+  default:
+    printf("Numero no valido\n");
+    return true;
+    break;
+  }
+  return true;
+}
+
+void turnoCroupier(Jugador * croupier, Carta * baraja,int * idx){
+  mostrarMano(croupier);
+  if (croupier->bj){
+    printf("Blackjack!\n");
+    return;
+  }
+  while (true){
+    if (croupier->suma <= 16){
+      repartirCarta(croupier, baraja, idx);
+      mostrarMano(croupier);
+    }
+    if (croupier->suma >= 17) break;
+    printf("\n\n");
   }
 }
 
@@ -126,19 +223,14 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Carta * baraja,
   }
 
   // ********  BARAJAR EL MAZO  ********
-  if (baraja == NULL){
-    printf("Error al guardar memoria");
-    exit(1);
-  }
-
-  int * indice = (int*)malloc(sizeof(int));
-  barajarMazo(mazo, baraja, indice);
+  barajarMazo(mazo, baraja, idx);
 
   // ********  APUESTAS  ********
   printf("** Empiezan las apuestas! **\n\n");
 
   aux = firstMap(jugadores);
   while (aux != NULL){
+    aux->bj = false;
     printf("\"%s\"\nIngrese su apuesta: \n > ", aux->nombre);
     // Aqui cada jugador apuesta
     // Se comprueba si tiene el dinero suficiente
@@ -148,17 +240,38 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Carta * baraja,
   printf("\n\n");
 
 
+  // ********  CREAR CROUPIER  ********
+  
+  Jugador *croupier = (Jugador*)malloc(sizeof(Jugador));
+  croupier->suma = 0;
+  croupier->cantCarta = 0;
+  croupier->bj = false;
+  printf("xd\n");
+  repartirCarta(croupier, baraja, idx);
+  repartirCarta(croupier, baraja, idx);
+  printf("Mano del Croupier\n");
+  mostrarCarta(croupier->mano[0]);
+  printf("[XX]\n\n");
+  if (croupier->suma == 21) croupier->bj = true;
+
+
   // ********  REPARTICION CARTAS INICIALES  ********
+  aux = firstMap(jugadores);
+  while (aux!=NULL){
+    aux->cantCarta = 0;
+    repartirCarta(aux, baraja, idx);
+    repartirCarta(aux, baraja, idx);
+    aux = nextMap(jugadores);
+  }
 
 
   // ********  TURNOS JUGADORES  ********
   aux = firstMap(jugadores);
   while (aux != NULL){
-    printf("Turno de \"%s\"\n", aux->nombre);
-    // Se muestra la mano del jugador
 
-    printf("Que desea hacer?\n");
-    //opcionesJugador(); Funcion que muestra las opciones
+    printf("Turno de \"%s\"\n", aux->nombre);
+
+    while(opcionJugador(aux, baraja, idx));
     printf("\n");
     aux = nextMap(jugadores);
   }
@@ -166,6 +279,9 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Carta * baraja,
 
 
   // ********  RESULTADOS  ********
+  printf("Resultados!\n");
+
+  turnoCroupier(croupier, baraja, idx);
 
 
   // ********  RETIRO DE JUGADORES  ********
@@ -215,6 +331,7 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Carta * baraja,
 
   }
   printf("******\n\n");
+  free(croupier);
 }
 
 bool menuPrincipal(){
@@ -243,7 +360,7 @@ bool menuPrincipal(){
     printf("\n");
     
     if (0 < *cantJugadores && *cantJugadores <= 5) break;
-    printf("Número no valido\n");
+    printf("Numero no valido\n");
   }
   printf("\n");
 
