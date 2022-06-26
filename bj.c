@@ -5,8 +5,6 @@
 #include <time.h>
 
 #include "Map.c"
-#include "hashmapint.c"
-
 
 int valores[13] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
 char pintas[4] = {'C', 'D', 'T', 'P'};
@@ -41,7 +39,6 @@ void chomp(char *s) {
     *s = 0;
 }
 
-
 void mostrarValor(int valor){
   switch (valor){
     case 1: printf("A");
@@ -58,21 +55,9 @@ void mostrarValor(int valor){
 }
 
 void mostrarCarta(Carta * card){
+  printf("[");
   mostrarValor(card->valor);
-  printf("%c ", card->pinta);
-}
-
-void barajarMazo(Carta * mazo, HashMap * baraja, int * keyBaraja){
-  for (int i = 0 ; i < 52 ; i++){
-    Carta * new = (Carta*)malloc(sizeof(Carta));
-    new->pinta = mazo[i].pinta;
-    new->valor = mazo[i].valor;
-
-    (keyBaraja[i]) = rand();
-
-    //insertHashMap(baraja, (keyBaraja+i), new);
-    //printf("%d\n", i);
-  }
+  printf("%c] ", card->pinta);
 }
 
 void crearJugador(Map * jugadores){
@@ -90,13 +75,38 @@ void crearJugador(Map * jugadores){
   printf("\n");
 }
 
-void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, HashMap * baraja, int * keyBaraja, int * idxBaraja){
+void crearMazo(Carta *mazo){
+  int cont = 0;
+  for (int i = 0 ; i < 4 ; i++){
+    for (int j = 0 ; j < 13 ; j++){
+      mazo[cont].valor = valores[j];
+      mazo[cont].pinta = pintas[i];
+      cont++;
+    }
+  }
+}
+
+void barajarMazo(Carta * mazo, Map * baraja, int * contCarta){
+  *contCarta = 0;
+  for (int i = 0 ; i < 52 ; i++){
+    Carta * nuevo = (Carta*)calloc(1, sizeof(Carta));
+    nuevo->pinta = mazo[i].pinta;
+    nuevo->valor = mazo[i].valor;
+
+    int * key = (int*)malloc(sizeof(int));
+    *key = rand();
+
+    insertMap(baraja, key, nuevo);
+  }
+}
+
+void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Map * baraja, int * contCarta){
   printf("******\n");
   printf("Empieza el juego!\n\n");
-  
   Jugador * aux;
+  Carta * auxCarta;
 
-  // - - -  HAY DINERO??  - - -
+  // ********  HAY DINERO?  ********
   int cantRetirada = 0;
   aux = firstMap(jugadores);
 
@@ -114,20 +124,21 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, HashMap * baraj
     return;
   }
 
-  // - - -  BARAJAR EL MAZO  - - -
-  *idxBaraja = 0;
-  barajarMazo(mazo, baraja, keyBaraja);
-  printf("Mazo barajado\n");
+  // ********  BARAJAR EL MAZO  ********
+  barajarMazo(mazo, baraja, contCarta);
 
-  /*for (int i = 0 ; i < 52; i++){
-    Carta * auxCarta = searchHashMap(baraja, (char*)(keyBaraja[i]));
+  auxCarta = firstMap(baraja);
+  if (auxCarta == NULL) printf("QUe loco\n");
+  while(auxCarta != NULL){
     mostrarCarta(auxCarta);
     printf("\n");
-  }*/
+    auxCarta = nextMap(baraja);
+  }
+  printf("\n");
 
-  // Se crean los datos para el croupier (en desarrollo)
+  
 
-  // - - -  APUESTAS  - - -
+  // ********  APUESTAS  ********
   printf("** Empiezan las apuestas! **\n\n");
 
   aux = firstMap(jugadores);
@@ -141,13 +152,10 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, HashMap * baraj
   printf("\n\n");
 
 
-  // - - -  REPARTICION CARTAS INICIALES  - - -
-  for (int i = 0 ; i < 52 ; i++)
-    printf("%d -", *(keyBaraja+i));
-  printf("\n");
+  // ********  REPARTICION CARTAS INICIALES  ********
 
 
-  // - - -  TURNOS JUGADORES  - - - 
+  // ********  TURNOS JUGADORES  ********
   aux = firstMap(jugadores);
   while (aux != NULL){
     printf("Turno de \"%s\"\n", aux->nombre);
@@ -161,10 +169,10 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, HashMap * baraj
   printf("\n\n");
 
 
-  // - - -  RESULTADOS  - - -
+  // ********  RESULTADOS  ********
 
 
-  // - - -  RETIRO DE JUGADORES  - - - 
+  // ********  RETIRO DE JUGADORES  ********
   int respuesta;
   cantRetirada = 0;
 
@@ -182,7 +190,7 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, HashMap * baraj
   (*cantJugadores) -= cantRetirada;
 
 
-  // - - -  AÑADIR JUGADORES  - - -
+  // ********  AÑADIR JUGADORES  ********
   int capacidad = 5 - *cantJugadores;
   if (capacidad != 0){
     printf("Desea unirse otro jugador?\n");
@@ -213,43 +221,6 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, HashMap * baraj
   printf("******\n\n");
 }
 
-
-void crearMazo(Carta *mazo){
-  int cont = 0;
-  for (int i = 0 ; i < 4 ; i++){
-    for (int j = 0 ; j < 13 ; j++){
-      mazo[cont].valor = valores[j];
-      mazo[cont].pinta = pintas[i];
-      cont++;
-    }
-  }
-
- /*for (int x = 0 ; x < 52 ; x++){
-    mostrarCarta(mazo[x]);
-    printf("\n");
-  }/*
-  
-  /*
-  for (int i = 0 ; i < 13 ; i++){
-    mostrarValor(valores[i]);
-    printf(" - ");
-  }
-  printf("\n");*/
-
-}
-
-/*
-void barajarMazo(Carta * mazo, TreeMap * Baraja, int i){
-  int * x = (int*)malloc(sizeof(int));
-  Carta * nuevo = (Carta*)calloc(1, sizeof(Carta));;
-  nuevo->pinta = mazo[i].pinta;
-  nuevo->valor = mazo[i].valor;
-  //printf("%d-%c\n", nuevo->valor, nuevo->pinta);
-  * x = rand();
-  insertTreeMap(Baraja, x , nuevo);
-  //printf("%d\n", *x);
-}*/
-
 bool menuPrincipal(){
   printf("**** BLACKJACK ****\n\n");
   
@@ -259,17 +230,17 @@ bool menuPrincipal(){
 
   if (respuesta != 1) return false;
 
+  // ********  PREPARACION JUEGO  ********
 
-
-  //Creacion del mazo
+  // ********  CREACION DEL MAZO ORIGINAL  ********
   Carta * mazo = (Carta*)calloc(52,sizeof(Carta));
   crearMazo(mazo);
 
-  // Preparación juego
+
+  // ********  CANTIDAD DE JUGADORES  ********
   printf("\nCuantos jugadores son? (Maximo 5)\n");
   int * cantJugadores = (int*)calloc(1, sizeof(int));
 
-  // Cantidad de jugadores
   while(true){
     printf(" > ");
     scanf("%d", cantJugadores);
@@ -280,7 +251,8 @@ bool menuPrincipal(){
   }
   printf("\n");
 
-  // Creación Mapa de jugadores
+
+  // ********  CREACION MAPA DE JUGADORES  ********
   Map * jugadores = createMap(is_equal_string);
 
   for (int i = 0 ; i < *cantJugadores ; i++){
@@ -290,20 +262,16 @@ bool menuPrincipal(){
   printf("\n\n");
 
 
-  int * keyBaraja = (int*)malloc(52*sizeof(int));
+  // ********  CREACION MAPA DE BARAJA  ********
+  Map * baraja = createMap(lower_than_int);
+  int * contCarta;
 
-  HashMap * baraja = createHashMap(100);
-  int * idxBaraja = (int*)calloc(1, sizeof(int));
 
-
-  // BLACKJACK!
+  // ********  BLACKJACK  ********
   while(*cantJugadores != 0){
-    blackjack(cantJugadores, jugadores, mazo, baraja, keyBaraja, idxBaraja);
+    blackjack(cantJugadores, jugadores, mazo, baraja, contCarta);
   }
 
-  free(keyBaraja);
-  free(baraja);
-  free(idxBaraja);
   return true;
 }
 
