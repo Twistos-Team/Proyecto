@@ -22,6 +22,7 @@ typedef struct{
   Carta mano[6];
   int cantCarta;
   bool bj;
+  bool retirado;
 } Jugador;
 
 int lower_than_int(void* key1, void* key2){
@@ -66,12 +67,16 @@ void crearJugador(Map * jugadores){
   Jugador * nuevo = (Jugador*)calloc(1, sizeof(Jugador));
 
   nuevo->nombre = (char*)malloc(15*sizeof(char));
+  int dinero;
 
   printf("Ingrese su nombre: \n > ");
   fflush(stdin);
   fgets(nuevo->nombre, 100, stdin);
   chomp(nuevo->nombre);
-  nuevo->dinero = 10000;
+  
+  printf("\nIngrese su dinero: \n > ");
+  scanf("%d", &dinero);
+  nuevo->dinero = dinero;
 
   insertMap(jugadores, nuevo->nombre, nuevo);
   printf("\n");
@@ -103,16 +108,11 @@ void barajarMazo(Carta * mazo, Carta *baraja, int *indice){
       cont++;
     }
   }
-  
-  
+
   *indice = 51;
-  /*
-  for(int i = 0 ; i < 52 ; i ++  ){
-    mostrarCarta(baraja[i]);
-  }*/
 }
-void repartirCarta(Jugador * jugador, Carta * baraja, int * i){
-  jugador->mano[jugador->cantCarta] = baraja[*i];
+void repartirCarta(Jugador * jugador, Carta * baraja, int * idx){
+  jugador->mano[jugador->cantCarta] = baraja[*idx];
   int valor = jugador->mano[jugador->cantCarta].valor;
   (jugador->cantCarta)++;
 
@@ -132,12 +132,12 @@ void repartirCarta(Jugador * jugador, Carta * baraja, int * i){
   }
   
   jugador->suma += valor;
-  (*i)--;
+  (*idx)--; //Con el fin de que no se repitan las cartas
 }
 
-void mostrarMano(Jugador * j){
-  for (int i = 0 ; i < j->cantCarta ; i++){
-    mostrarCarta(j->mano[i]);
+void mostrarMano(Jugador * Jugador){
+  for (int i = 0 ; i < Jugador->cantCarta ; i++){
+    mostrarCarta(Jugador->mano[i]);
   }
   printf("\n");
 }
@@ -170,7 +170,8 @@ bool opcionJugador(Jugador * aux, Carta * baraja, int * idx){
     break;
 
   case 3:
-  printf("Rendirse\n");
+    printf("Rendirse\n");
+    aux->retirado = true;
     return false;
     break;
 
@@ -231,6 +232,7 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Carta * baraja,
   aux = firstMap(jugadores);
   while (aux != NULL){
     aux->bj = false;
+    aux->retirado = false;
     printf("\"%s\"\nIngrese su apuesta: \n > ", aux->nombre);
     // Aqui cada jugador apuesta
     // Se comprueba si tiene el dinero suficiente
@@ -246,7 +248,6 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Carta * baraja,
   croupier->suma = 0;
   croupier->cantCarta = 0;
   croupier->bj = false;
-  printf("xd\n");
   repartirCarta(croupier, baraja, idx);
   repartirCarta(croupier, baraja, idx);
   printf("Mano del Croupier\n");
@@ -282,7 +283,7 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Carta * baraja,
   printf("Resultados!\n");
 
   turnoCroupier(croupier, baraja, idx);
-
+  calcularApuestas(jugadores, croupier);//terminar...
 
   // ********  RETIRO DE JUGADORES  ********
   int respuesta;
