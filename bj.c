@@ -185,10 +185,6 @@ bool opcionJugador(Jugador * aux, Carta * baraja, int * idx){
 
 void turnoCroupier(Jugador * croupier, Carta * baraja,int * idx){
   mostrarMano(croupier);
-  if (croupier->bj){
-    printf("Blackjack!\n");
-    return;
-  }
   while (true){
     if (croupier->suma <= 16){
       repartirCarta(croupier, baraja, idx);
@@ -197,6 +193,63 @@ void turnoCroupier(Jugador * croupier, Carta * baraja,int * idx){
     if (croupier->suma >= 17) break;
     printf("\n\n");
   }
+}
+void calcularApuestas(Map *jugadores, Jugador *croupier){
+  Jugador * aux;
+  aux = firstMap(jugadores);
+
+  while (aux != NULL){
+    printf("Mano Jugador >>> \n");
+    if((aux->bj == true) && (aux->retirado == false) && (croupier->bj == false)){
+      mostrarMano(aux);
+      int ganado;
+      ganado = (aux->apuestaTurno*2)+(aux->apuestaTurno/2);
+      aux->dinero = (aux->dinero+ganado);
+      printf("\nFelicidades Ganaste!\n");
+      printf("\nDinero ganado >>>> %d\n", ganado);
+      printf("Dinero Total >>>> %d\n\n", aux->dinero);
+    }
+    if ((aux->suma > croupier->suma) && (croupier->suma <= 21) && (aux->suma <= 21) && (aux->bj == false) && (croupier->bj == false) && (aux->retirado == false)){
+      mostrarMano(aux);
+      int ganado;
+      ganado = (aux->apuestaTurno*2);
+      aux->dinero = (aux->dinero+ganado);
+      printf("\nFelicidades Ganaste!\n");
+      printf("\nDinero ganado >>>> %d\n", ganado);
+      printf("Dinero Total >>>> %d\n", aux->dinero);
+    }
+    if(aux->retirado){
+      mostrarMano(aux);
+      int perdido;
+      perdido = aux->apuestaTurno/2;
+      aux->dinero = aux->dinero - perdido;
+      printf("ouch Te Retiraste\n");
+      printf("\nDinero perdido >>>> %d\n", perdido);
+      printf("Dinero Total >>>> %d", aux->dinero);
+    }
+    if(aux->suma > 21 || (aux->suma < croupier->suma) && (croupier->suma <= 21) && (croupier->bj = false)){
+      mostrarMano(aux);
+      aux->dinero = aux->dinero - aux->apuestaTurno;
+      printf("\n%s Perdiste\n ", aux->nombre);
+      printf("\nDinero perdido >>>> %d\n", aux->apuestaTurno);
+      printf("Dinero Total >>>> %d", aux->dinero);
+      printf("\nCroupier Gana!\n");
+      mostrarMano(croupier);
+      printf("\n");
+    }
+    if((croupier->bj == true) && (aux->bj == false)){
+      printf("\nBlackjack!\n");
+      printf("Croupier Gana!\n");
+    } 
+    if(croupier->suma == aux->suma){
+      mostrarMano(aux);
+      printf("\nEmpate!\n");
+      printf("*****Se devuelve la apuesta*****\n");
+      printf("Dinero Total >>>> %d\n", aux->dinero);
+    }
+    aux = nextMap(jugadores);
+  }
+  
 }
 
 void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Carta * baraja, int * idx){
@@ -227,6 +280,7 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Carta * baraja,
   barajarMazo(mazo, baraja, idx);
 
   // ********  APUESTAS  ********
+  int apuesta;
   printf("** Empiezan las apuestas! **\n\n");
 
   aux = firstMap(jugadores);
@@ -234,8 +288,15 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Carta * baraja,
     aux->bj = false;
     aux->retirado = false;
     printf("\"%s\"\nIngrese su apuesta: \n > ", aux->nombre);
-    // Aqui cada jugador apuesta
-    // Se comprueba si tiene el dinero suficiente
+    
+    while(1){ 
+      scanf("%d", &apuesta);
+      if(aux->dinero >= apuesta){
+        aux->apuestaTurno = apuesta;
+        break;
+      }else printf("*****Apuesta invalida*****\nIntentelo de nuevo\n > ");
+    }
+
     aux = nextMap(jugadores);
     printf("\n");
   }
@@ -280,10 +341,10 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Carta * baraja,
 
 
   // ********  RESULTADOS  ********
-  printf("Resultados!\n");
-
+  printf("\n*****Resultados!*****\n");
+  printf("Mano Croupier >>> \n");
   turnoCroupier(croupier, baraja, idx);
-  calcularApuestas(jugadores, croupier);//terminar...
+  calcularApuestas(jugadores, croupier);
 
   // ********  RETIRO DE JUGADORES  ********
   int respuesta;
@@ -355,7 +416,7 @@ bool menuPrincipal(){
   printf("\nCuantos jugadores son? (Maximo 5)\n");
   int * cantJugadores = (int*)calloc(1, sizeof(int));
 
-  while(true){
+  while(1){
     printf(" > ");
     scanf("%d", cantJugadores);
     printf("\n");
