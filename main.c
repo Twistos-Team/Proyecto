@@ -9,6 +9,7 @@ int main(){
   system("COLOR A0");
   while(menuPrincipal()){}
   
+  OUCH;
   system("COLOR F4");
   system("cls");
 
