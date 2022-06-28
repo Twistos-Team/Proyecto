@@ -414,7 +414,9 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Carta * baraja,
   while (aux != NULL){
     inicializarJugador(aux);
     printf("********** COMIENZAN LAS APUESTAS **********\n\n");
-    printf("\"%s\"\nIngrese su apuesta: \n > ", aux->nombre);
+    printf("\"%s\"\n", aux->nombre);
+    printf("Dinero actual  >>>> %d\n", aux->dinero);
+    printf("Ingrese su apuesta: \n > ");
      
     aux->apuestaTurno = ingresarInt();
     system("cls");
