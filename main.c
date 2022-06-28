@@ -5,9 +5,15 @@
 
 int main(){
   srand(time(NULL));
-  while(menuPrincipal()){}
 
-  printf("\n\nGracias por jugar ^-^\n > ");
+  system("COLOR A0");
+  while(menuPrincipal()){}
+  
+  system("COLOR F4");
+  system("cls");
+
+  printf("\n\n   %c Gracias por jugar %c", 3,3);
+
   fflush(stdin);
   getchar();
     return 0;
