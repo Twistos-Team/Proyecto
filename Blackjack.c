@@ -6,6 +6,11 @@
 
 #include "Map.c"
 
+#define GANASTE printf("Has Ganado!\n")
+#define PERDISTE printf("Has Perdido!\n")
+#define EMPATE printf("Has Empatado!\n")
+#define OUCH printf("ouch\n")
+
 int valores[13] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
 char pintas[4] = {'C', 'D', 'T', 'P'};
 
@@ -23,14 +28,9 @@ typedef struct{
   int cantCarta;
   bool bj;
   bool retirado;
+  bool sePaso;
+  int cantAss;
 } Jugador;
-
-int lower_than_int(void* key1, void* key2){
-    int* k1=(int*) key1;
-    int* k2=(int*) key2;
-    if(*k1<*k2) return 1;
-    return 0;
-}
 
 int is_equal_string(void * key1, void * key2) {
     if(strcmp((char*)key1, (char*)key2)==0) return 1;
@@ -111,10 +111,19 @@ void barajarMazo(Carta * mazo, Carta *baraja, int *indice){
 
   *indice = 51;
 }
+
+int tieneAs(Jugador* j){
+  int cont = 0;
+  for (int i = 0 ; i < j->cantCarta ; i++)
+    if (j->mano[i].valor == 1) cont++;
+  return cont;
+}
+
 void repartirCarta(Jugador * jugador, Carta * baraja, int * idx){
   jugador->mano[jugador->cantCarta] = baraja[*idx];
   int valor = jugador->mano[jugador->cantCarta].valor;
   (jugador->cantCarta)++;
+
 
   switch(valor){
     case 1: 
@@ -132,6 +141,21 @@ void repartirCarta(Jugador * jugador, Carta * baraja, int * idx){
   }
   
   jugador->suma += valor;
+
+  if (jugador->suma > 21){
+
+    int contAss = tieneAs(jugador);
+    if (contAss != 0){
+      if (jugador->cantAss < contAss){
+      jugador->suma -= 10;
+      (jugador->cantAss) ++;
+      (*idx)--;
+      return;
+      }
+    }
+
+    jugador->sePaso = true;
+  }
   (*idx)--; //Con el fin de que no se repitan las cartas
 }
 
@@ -146,7 +170,9 @@ bool opcionJugador(Jugador * aux, Carta * baraja, int * idx){
   printf("Mano: ");
   mostrarMano(aux);
 
-  if (aux->suma == 21){
+  if (aux->sePaso) return false;
+
+  if (aux->suma == 21 && aux->cantCarta == 2){
     printf("Blackjack!\n");
     aux->bj = true;
     return false;
@@ -154,7 +180,7 @@ bool opcionJugador(Jugador * aux, Carta * baraja, int * idx){
 
   printf("Que desea hacer?\n");
   int resp;
-  printf("Pedir carta(1)\nPlantarse(2)\nRendirse(3)\n > ");
+  printf("Pedir carta(1)\nPlantarse(2)\nRendirse(3)\nDoblar Apuesta(4)\n > ");
   scanf("%d", &resp);
   printf("\n");
 
@@ -162,23 +188,37 @@ bool opcionJugador(Jugador * aux, Carta * baraja, int * idx){
   case 1:
     if (aux->cantCarta < 6) repartirCarta(aux,baraja,idx);
     else printf("No puedes pedir mas cartas\n");
-    break;
+    if (aux->sePaso) printf("Te pasaste!\n");
+  return true;
 
   case 2:
-    printf("Plantarse\n");
+    printf("Te plantaste\n");
     return false;
-    break;
 
   case 3:
-    printf("Rendirse\n");
+    printf("Te rendiste\n");
     aux->retirado = true;
     return false;
-    break;
+
+  case 4:
+    if (aux->cantCarta == 2){
+      if (aux->suma >= 9 && aux->suma <= 11){
+        if (aux->dinero > 2* aux->apuestaTurno){
+          aux->apuestaTurno *= 2;
+          repartirCarta(aux, baraja, idx);
+          printf("Has doblado tu apuesta!\n");
+          mostrarMano(aux);
+          return false;
+        }
+      }
+    }
+
+    printf("\nNo puedes doblar apuesta\n");
+    return true;
 
   default:
     printf("Numero no valido\n");
     return true;
-    break;
   }
   return true;
 }
@@ -191,70 +231,119 @@ void turnoCroupier(Jugador * croupier, Carta * baraja,int * idx){
       mostrarMano(croupier);
     }
     if (croupier->suma >= 17) break;
-    printf("\n\n");
   }
+  printf("\n");
 }
+
 void calcularApuestas(Map *jugadores, Jugador *croupier){
   Jugador * aux;
   aux = firstMap(jugadores);
 
   while (aux != NULL){
-    printf("Mano Jugador >>> \n");
-    if((aux->bj == true) && (aux->retirado == false) && (croupier->bj == false)){
-      mostrarMano(aux);
-      int ganado;
-      ganado = (aux->apuestaTurno*2)+(aux->apuestaTurno/2);
-      aux->dinero = (aux->dinero+ganado);
-      printf("\nFelicidades Ganaste!\n");
-      printf("\nDinero ganado >>>> %d\n", ganado);
-      printf("Dinero Total >>>> %d\n\n", aux->dinero);
-    }
-    if ((aux->suma > croupier->suma) && (croupier->suma <= 21) && (aux->suma <= 21) && (aux->bj == false) && (croupier->bj == false) && (aux->retirado == false)){
-      mostrarMano(aux);
-      int ganado;
-      ganado = (aux->apuestaTurno*2);
-      aux->dinero = (aux->dinero+ganado);
-      printf("\nFelicidades Ganaste!\n");
-      printf("\nDinero ganado >>>> %d\n", ganado);
-      printf("Dinero Total >>>> %d\n", aux->dinero);
-    }
-    if(aux->retirado){
-      mostrarMano(aux);
+    printf("\n\nMano \"%s\"\n", aux->nombre);
+    mostrarMano(aux);
+    printf("\n");
+
+    if (aux->retirado){
       int perdido;
       perdido = aux->apuestaTurno/2;
       aux->dinero = aux->dinero - perdido;
-      printf("ouch Te Retiraste\n");
-      printf("\nDinero perdido >>>> %d\n", perdido);
+      printf("Te Retiraste\n");
+      PERDISTE;
+      printf("Dinero perdido >>>> %d\n", perdido);
       printf("Dinero Total >>>> %d", aux->dinero);
+      aux = nextMap(jugadores);
+      continue;
     }
-    if(aux->suma > 21 || (aux->suma < croupier->suma) && (croupier->suma <= 21) && (croupier->bj = false)){
-      mostrarMano(aux);
+    if (aux->sePaso){
       aux->dinero = aux->dinero - aux->apuestaTurno;
-      printf("\n%s Perdiste\n ", aux->nombre);
-      printf("\nDinero perdido >>>> %d\n", aux->apuestaTurno);
-      printf("Dinero Total >>>> %d", aux->dinero);
-      printf("\nCroupier Gana!\n");
-      mostrarMano(croupier);
-      printf("\n");
+      printf("Te pasaste\n");
+      PERDISTE;
+      printf("Dinero perdido >>>> %d\n", aux->apuestaTurno);
+      printf("Dinero Total >>>> %d\n", aux->dinero);
+      aux = nextMap(jugadores);
+      continue;
     }
-    if((croupier->bj == true) && (aux->bj == false)){
-      printf("\nBlackjack!\n");
-      printf("Croupier Gana!\n");
-    } 
-    if(croupier->suma == aux->suma){
-      mostrarMano(aux);
-      printf("\nEmpate!\n");
-      printf("*****Se devuelve la apuesta*****\n");
+
+    if (aux->bj){
+      if (croupier->bj){
+        printf("Dos Blackjacks!\n");
+        EMPATE;
+        printf("Dinero Total >>>> %d\n", aux->dinero);
+        aux = nextMap(jugadores);
+        continue;
+      }
+      else{
+      int ganado;
+      ganado = (aux->apuestaTurno)+(aux->apuestaTurno/2);
+      aux->dinero = (aux->dinero+ganado);
+      printf("Blackjack!\n");
+      GANASTE;
+      printf("Dinero Ganado >>>> %d\n", ganado);
+      printf("Dinero Total >>>> %d\n", aux->dinero);
+      aux = nextMap(jugadores);
+      continue;
+      }
+    }
+    else{
+      if (croupier->bj){
+        aux->dinero -= aux->apuestaTurno;
+        printf("Blackjack del Croupier!\n");
+        PERDISTE;
+        printf("Dinero Perdido >>>> %d\n", aux->apuestaTurno);
+        printf("Dinero Total >>>> %d\n", aux->dinero);
+        aux = nextMap(jugadores);
+        continue;
+      }
+      else{
+        if (croupier->sePaso){
+          aux->dinero += aux->apuestaTurno;
+          printf("Se paso el croupier\n");
+          GANASTE;
+          printf("Dinero Ganado >>>> %d\n", aux->apuestaTurno);
+          printf("Dinero Total >>>> %d\n", aux->dinero);
+          aux = nextMap(jugadores);
+          continue;
+        }
+      }
+    }
+
+    if (aux->suma == croupier->suma){
+      EMPATE;
       printf("Dinero Total >>>> %d\n", aux->dinero);
     }
+    else{
+      if (aux->suma > croupier->suma){
+        aux->dinero += aux->apuestaTurno;
+        GANASTE;
+        printf("Dinero Ganado >>>> %d\n", aux->apuestaTurno);
+        printf("Dinero Total >>>> %d\n", aux->dinero);
+      }
+      else{
+        aux->dinero -= aux->apuestaTurno;
+        PERDISTE;
+        printf("Dinero Perdido >>>> %d\n", aux->apuestaTurno);
+        printf("Dinero Total >>>> %d\n", aux->dinero);
+      }
+    }
+
     aux = nextMap(jugadores);
+    continue;
   }
-  
+  printf("\n\n");
+}
+
+void inicializarJugador(Jugador* jugador){
+  jugador->bj = false;
+  jugador->retirado = false;
+  jugador->sePaso = false;
+  jugador->suma = 0;
+  jugador->cantCarta = 0;
+  jugador->cantAss = 0;
 }
 
 void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Carta * baraja, int * idx){
-  printf("******\n");
-  printf("Empieza el juego!\n\n");
+  printf("********************************************\n");
   Jugador * aux;
   Carta * auxCarta;
 
@@ -281,17 +370,16 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Carta * baraja,
 
   // ********  APUESTAS  ********
   int apuesta;
-  printf("** Empiezan las apuestas! **\n\n");
+  printf("********** COMIENZAN LAS APUESTAS **********\n\n");
 
   aux = firstMap(jugadores);
   while (aux != NULL){
-    aux->bj = false;
-    aux->retirado = false;
+    inicializarJugador(aux);
     printf("\"%s\"\nIngrese su apuesta: \n > ", aux->nombre);
     
     while(1){ 
       scanf("%d", &apuesta);
-      if(aux->dinero >= apuesta){
+      if(aux->dinero >= apuesta && apuesta > 0){
         aux->apuestaTurno = apuesta;
         break;
       }else printf("*****Apuesta invalida*****\nIntentelo de nuevo\n > ");
@@ -306,15 +394,13 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Carta * baraja,
   // ********  CREAR CROUPIER  ********
   
   Jugador *croupier = (Jugador*)malloc(sizeof(Jugador));
-  croupier->suma = 0;
-  croupier->cantCarta = 0;
-  croupier->bj = false;
+  inicializarJugador(croupier);
   repartirCarta(croupier, baraja, idx);
   repartirCarta(croupier, baraja, idx);
   printf("Mano del Croupier\n");
   mostrarCarta(croupier->mano[0]);
   printf("[XX]\n\n");
-  if (croupier->suma == 21) croupier->bj = true;
+  if (croupier->suma == 21 && croupier->cantCarta == 2) croupier->bj = true;
 
 
   // ********  REPARTICION CARTAS INICIALES  ********
@@ -328,6 +414,7 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Carta * baraja,
 
 
   // ********  TURNOS JUGADORES  ********
+  printf("************ TURNO DE JUGADORES ************\n");
   aux = firstMap(jugadores);
   while (aux != NULL){
 
@@ -337,16 +424,18 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Carta * baraja,
     printf("\n");
     aux = nextMap(jugadores);
   }
-  printf("\n\n");
 
 
   // ********  RESULTADOS  ********
-  printf("\n*****Resultados!*****\n");
+  printf("\n**************** RESULTADOS ****************\n\n");
   printf("Mano Croupier >>> \n");
   turnoCroupier(croupier, baraja, idx);
+
   calcularApuestas(jugadores, croupier);
 
+
   // ********  RETIRO DE JUGADORES  ********
+  printf("\n************* DESEA RETIRARSE? *************\n");
   int respuesta;
   cantRetirada = 0;
 
@@ -365,6 +454,7 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Carta * baraja,
 
 
   // ********  AÑADIR JUGADORES  ********
+  printf("************** QUIERE UNIRSE? **************\n");
   int capacidad = 5 - *cantJugadores;
   if (capacidad != 0){
     printf("Desea unirse otro jugador?\n");
@@ -392,12 +482,13 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Carta * baraja,
     }
 
   }
-  printf("******\n\n");
   free(croupier);
+  printf("\n");
 }
 
 bool menuPrincipal(){
-  printf("**** BLACKJACK ****\n\n");
+  printf("********************************************\n");
+  printf("**************** BLACKJACK! ****************\n\n");
   
   printf("Empezar juego (1)\nSalir (2)\n > ");
   int respuesta;
@@ -448,14 +539,4 @@ bool menuPrincipal(){
   }
 
   return true;
-}
-
-int main(){
-  srand(time(NULL));
-  while(menuPrincipal()){}
-
-  printf("\n\nGracias por jugar ^-^\n > ");
-  fflush(stdin);
-  getchar();
-    return 0;
 }
