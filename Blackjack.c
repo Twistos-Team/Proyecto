@@ -487,7 +487,7 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Carta * baraja,
 }
 
 bool menuPrincipal(){
-  printf("********************************************\n");
+  printf("____________________________________________\n");
   printf("**************** BLACKJACK! ****************\n\n");
   
   printf("Empezar juego (1)\nSalir (2)\n > ");
