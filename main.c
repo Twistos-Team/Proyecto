@@ -6,7 +6,7 @@
 int main(){
   srand(time(NULL));
 
-  system("COLOR A0");
+  system("COLOR 2F");
   while(menuPrincipal()){}
   
   OUCH;
