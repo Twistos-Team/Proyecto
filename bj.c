@@ -416,12 +416,18 @@ void blackjack(int *cantJugadores, Map *jugadores, Carta * mazo, Carta * baraja,
     printf("********** COMIENZAN LAS APUESTAS **********\n\n");
     printf("\"%s\"\n", aux->nombre);
     printf("Dinero actual  >>>> %d\n", aux->dinero);
-    printf("Ingrese su apuesta: \n > ");
-     
-    aux->apuestaTurno = ingresarInt();
-    system("cls");
 
-    aux = nextMap(jugadores);
+    while(1){ 
+      printf("Ingrese su apuesta: \n > ");
+      aux->apuestaTurno = ingresarInt();
+      if(aux->dinero >= aux->apuestaTurno){
+        system("cls");
+        aux = nextMap(jugadores);
+        break;
+      }else{
+        printf("Se exedio de su monto actual\n");
+      }
+    }
   }
   printf("\n\n");
 
